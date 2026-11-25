@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Vocabulario Avanzado - Clase</title>
+    
+    <style>
+        :root { --p: #2c3e50; --a: #3498db; --bg: #f4f7f6; --ok: #27ae60; --bad: #e74c3c; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .row-selector {
+            display: flex;
+            gap: 10px;
+            width: 90vw;
+            max-width: 450px;
+            margin-bottom: 15px;
+        }
+
+        .row-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--p);
+            border-radius: 10px;
+            background: white;
+            color: var(--p);
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .row-btn.active {
+            background: var(--p);
+            color: white;
+        }
+
+        .card-container { 
+            perspective: 1000px;
+            width: 90vw; 
+            max-width: 450px; 
+            height: 320px; 
+            cursor: pointer;
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card { 
+            width: 100%;
+            height: 100%; 
+            position: relative; 
+            transition: transform 0.4s; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            border-radius: 15px;
+            transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
+        }
+
+        .card.flipped { transform: rotateY(180deg); }
+
+        .face { 
+            position: absolute;
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px;
+            padding: 20px; 
+            box-sizing: border-box; 
+            border-radius: 15px; 
+            text-align: center; 
+            font-size: 1.4rem;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            overflow: hidden;
+        }
+
+        .front { background: white; color: var(--p); font-weight: bold; border: 2px solid #ddd; }
+        .back { background: var(--a); color: white; transform: rotateY(180deg); font-size: 1.2rem; }
+
+        .card-img {
+            max-width: 100%;
+            max-height: 155px;
+            object-fit: contain;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .controls { 
+            margin-top: 15px;
+            display: flex; 
+            gap: 10px; 
+            width: 90vw; 
+            max-width: 450px;
+        }
+
+        .action-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            width: 90vw;
+            max-width: 450px;
+        }
+
+        button { 
+            flex: 1;
+            padding: 15px 10px; 
+            border: none; 
+            border-radius: 12px; 
+            background: var(--p); 
+            color: white; 
+            font-size: 1rem; 
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-know { background: var(--ok); }
+        .btn-dont-know { background: var(--bad); }
+
+        .info { margin-top: 12px; font-weight: bold; color: #7f8c8d; }
+        
+        .btn-invert { 
+            background: #8e44ad; 
+            color: white; 
+            border: none;
+            border-radius: 12px;
+            padding: 15px; 
+            font-weight: bold; 
+            width: 90vw; 
+            max-width: 450px;
+            cursor: pointer; 
+            margin-bottom: 15px; 
+            font-size: 1rem;
+        }
+
+        .btn-reset {
+            background: #7f8c8d;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 10px;
+            font-weight: normal;
+            width: 90vw;
+            max-width: 450px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .btn-reset:hover { opacity: 1; }
+
+        @media (max-height: 600px) {
+            .card-container { height: 240px; }
+            .face { font-size: 1.1rem; }
+            .card-img { max-height: 95px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Deportes y entretenimiento</h1>
+    <button class="btn-invert" onclick="invertirIdiomas()">🔄 Invertir: <span id="modo-texto">Español ➡ Checo</span></button>
+
+    <div class="row-selector">
+        <button class="row-btn active" id="btn-fila-no" onclick="setFila('no')">Por aprender (<span id="count-no">0</span>)</button>
+        <button class="row-btn" id="btn-fila-si" onclick="setFila('si')">Ya aprendidas (<span id="count-si">0</span>)</button>
+    </div>
+
+    <div class="card-container" onclick="flip()">
+        <div class="card" id="c">
+            <div class="face front" id="q">
+                <span id="q-text">Cargando...</span>
+            </div>
+            <div class="face back" id="a">
+                <span id="a-text">...</span>
+                <img id="a-img" class="card-img" style="display: none;" alt="">
+            </div>
+        </div>
+    </div>
+
+    <div class="info" id="status">0 / 0</div>
+
+    <div class="controls">
+        <button onclick="prev()">⬅ Ant.</button>
+        <button onclick="shuffle()">🔀 Mezclar</button>
+        <button onclick="next()">Sig. ➡</button>
+    </div>
+
+    <div class="action-controls" id="eval-controls">
+        <button class="btn-dont-know" onclick="clasificarPalabra(false)">❌ No la sé</button>
+        <button class="btn-know" onclick="clasificarPalabra(true)">✔ Ya la sé</button>
+    </div>
+
+    <button class="btn-reset" onclick="reiniciarProgreso()">🗑 Reiniciar todo el progreso</button>
+
+<script>
+    // Añade `img: "img/nombre-archivo.jpg"` solo a las tarjetas que quieras ilustrar
+    const todasLasPalabras = [
+        {q: "baloncesto, m., ", a: "basketbal"}, // Ej: {q: "baloncesto, m., ", a: "basketbal", img: "img/baloncesto.jpg"},
+        {q: "básquet , m.", a: "basketbal"},
+        {q: "básquetbol , m.", a: "basketbal"},
+        {q: "balompié, m.", a: "fotbal"}, 
+        {q: "fútbol , m.", a: "fotbal"},
+        {q: "fútbol , m., americano", a: "americký fotbal"},
+        {q: "fútbol , m., sala", a: "fusta (sálový fotbal)"},
+        {q: "fútbol , m., siete", a: "malý fotbal (pro 7 hráčů a na polovičním hřišti)"},
+        {q: "voleibol, m.", a: "volejbal"}, 
+        {q: "vóley, m.", a: "volejbal"},
+        {q: "balonvolea, m.", a: "volejbal"},
+        {q: "béisbol, m.", a: "baseball"},
+        {q: "pelota, m.", a: "baseball"},
+        {q: "rugby, m.", a: "rugby"},
+        {q: "hockey, m. sobre hielo", a: "lední hokej"},
+        {q: "hockey, m. sobre césped", a: "pozemní hokej"},
+        {q: "balonmano, m.", a: "házená"},
+        {q: "waterpolo, m.", a: "vodní pólo"},
+        {q: "tenis, m.", a: "tenis"},
+        {q: "bádminton, m.", a: "badminton"},
+        {q: "squash, m.", a: "squash"}, 
+        {q: "tenis de mesa, m.", a: "stolní tenis"},
+        {q: "pimpón, m.", a: "ping pong"},
+        {q: "pádel, m.", a: "padel (futsal tenis)"},
+        {q: "jai-alai, m.", a: "jai-alai"},
+        {q: "cesta punta, f.", a: "jai-alai"},
+        {q: "pelota vasca, m.", a: "hra rukou na frontonu"},
+        {q: "frontón de mano, m.", a: "hra rukou na frontonu"},
+        {q: "natación, f., sincronizada", a: "synchronizované plavání"}, 
+        {q: "100 metros crol, m.", a: "100 metrů kraul"},
+        {q: "(natación) braza, f.", a: "prsa"},
+        {q: "(natación) pecho, m.", a: "prsa"},
+        {q: "(natación) mariposa, f.", a: "motýlek"},
+        {q: "(natación) espalda, f.", a: "znak"},
+        {q: "buceo, m.", a: "potápění"},
+        {q: "esnórquel, m.", a: "šnorchlování"},
+        {q: "paddle-, wind-, kite- surf, m.", a: "paddlesurf, windsurf, kitesufr"},
+        {q: "Salto, m.", a: "skok"},
+        {q: "clavados, m. pl.", a: "skoky do vody"},
+        {q: "Vela, f.", a: "plachtění, jachting"},
+        {q: "Piragüismo, m.", a: "kanoistika"},
+        {q: "canotaje, m.", a: "kanoistika"},
+        {q: "Rafting, m.", a: "rafting"},
+        {q: "Remo, m.", a: "veslování"},
+        {q: "Artes marciales, f. pl.", a: "bojové sporty"},
+        {q: "Boxeo, m.", a: "box"},
+        {q: "box, m.", a: "box"},
+        {q: "Yudo, M.", a: "judo"},
+        {q: "Kárate", a: "karate"},
+        {q: "karate", a: "karate"},
+        {q: "Taekwondo, m.", a: "Taekwondo"},
+        {q: "Lucha libre, f.", a: "volný zápas"},
+        {q: "Esgrima, f.", a: "šerm"},
+        {q: "Lanzamiento, m. de peso", a: "vrh koulí"},
+        {q: "Lanzamiento, m. de disco", a: "hod diskem"},
+        {q: "Lanzamiento, m. de martillo", a: "hod kladivem"},
+        {q: "Lanzamiento, m. de jabalina", a: "hod oštěpem"},
+        {q: "Salto, m. triple", a: "trojskok"},
+        {q: "Salto, m. de longitud", a: "skok daleký"},
+        {q: "Salto, m. de altura", a: "skok do výšky"},
+        {q: "Salto, m. con pértiga", a: "skok o tyči"},
+        {q: "100, 200, 400… metros lisos/planos, vallas", a: "běh na 100, 200, 400 metrů"},
+        {q: "Relevo, m.", a: "štafeta"},
+        {q: "20 kilómetros marcha", a: "20 km chůze"},
+        {q: "Decatlón, m.", a: "desetiboj"},
+        {q: "Heptatlón, m.", a: "sedmiboj"},
+        {q: "Maratón, m. f.", a: "marathon"},
+        {q: "Esquí, m., de fondo", a: "běhové lyžování"},
+        {q: "Esquí, m., de travesía", a: "tůry na lyžích"},
+        {q: "Esquí, m., alpino", a: "sjezdové lyžování"},
+        {q: "Eslalon, m.", a: "slalom"},
+        {q: "descenso, m.", a: "sjezd"},
+        {q: "Snowboard, m.", a: "snowboard"},
+        {q: "surf sobre nieve, m.", a: "snowboard"},
+        {q: "tabla de nieve, f.", a: "snowboard"},
+        {q: "Biatlón, m.", a: "biatlon"},
+        {q: "Patinaje, m. artístico", a: "krasobruslení"},
+        {q: "Patinaje, m. de velocidad", a: "rychlobruslení"},
+        {q: "Curling, m.", a: "curling"},
+        {q: "Gimnasia, f. artística", a: "artistická gymnastika"},
+        {q: "Gimnasia, f. rítmica", a: "rytmická gymnastika"},
+        {q: "Gimnasia, f. aeróbica", a: "aerobická gymnastika"},
+        {q: "Gimnasia, f. en trampolín", a: "trampolínová gymnastika"},
+        {q: "Gimnasia, f. acrobática", a: "akrobatická gymnastika"},
+        {q: "Halterofilia, f.", a: "vzpírání"},
+        {q: "Golf, m.", a: "golf"},
+        {q: "Alpinismo, m.", a: "horolezectví"},
+        {q: "montañismo, m.", a: "horolezectví"},
+        {q: "andinismo, m.", a: "horolezectví"},
+        {q: "Bolos, m. pl.", a: "kuželky"},
+        {q: "boliche, m.", a: "v LatE bowling"},
+        {q: "Petanca, f.", a: "pétanque"},
+        {q: "Tiro con arco, m.", a: "lukostřelba"},
+        {q: "Equitación, f.", a: "jezdectví"},
+        {q: "hípica, f.", a: "jezdectví"},
+        {q: "Ciclismo, m.", a: "cyklistika"},
+        {q: "Escalada, f.", a: "lezení na horolezeckou stěnu"},
+        {q: "Instalaciones, f. deportivas", a: "sportovní zařízení, sportoviště"},
+        {q: "Estadio, m.", a: "stadion"},
+        {q: "Cancha, f.", a: "hřiště, kurt"},
+        {q: "Pista, f.", a: "dráha"},
+        {q: "Frontón, m.", a: "hřiště na baskickou pelotu"},
+        {q: "Campo, m.", a: "hřiště, hrací plocha"},
+        {q: "Línea, m. de tres puntos", a: "trojková čára"},
+        {q: "Línea, m. de tiros libres", a: "čára trestného hodu"},
+        {q: "Línea, m. de ataque", a: "útočná čára"},
+        {q: "Línea, m. de fondo", a: "koncová čára"},
+        {q: "Línea, m. de banda", a: "postranní čára"},
+        {q: "Área, f. de penalti", a: "pokutové území"},
+        {q: "Área, f. de portería", a: "brankoviště"},
+        {q: "Centro, m. del campo", a: "střed hřiště"},
+        {q: "Córner, m.", a: "roh, rohový kop"},
+        {q: "Banquillo, m.", a: "lavička náhradníků"},
+        {q: "Zona, f. de ataque", a: "útočná zóna"},
+        {q: "Zona, f. de defensa", a: "obranná zóna"},
+        {q: "Zona, f. neutral", a: "neutrální zóna"},
+        {q: "Zona, f. de saque", a: "podávací zóna"},
+        {q: "Base, f.", a: "meta"},
+        {q: "Piscina, f.", a: "bazén"},
+        {q: "pileta, f.", a: "bazén"},
+        {q: "alberca, f.", a: "bazén"},
+        {q: "piscina, f. olímpica", a: "olympijský bazén"},
+        {q: "Trampolín, m.", a: "tramopolína"},
+        {q: "Cuadrilátero, m.", a: "boxerský ring"},
+        {q: "lona, f.", a: "boxerský ring"},
+        {q: "ring, m.", a: "boxerský ring"},
+        {q: "Tatami, m.", a: "žiněnka pro bojové sporty"},
+        {q: "Pista, f.", a: "dráha, kurt"},
+        {q: "Calle, f.", a: "fairway na golfovém hřišti"},
+        {q: "Hoyo, m.", a: "jamka v golfu"},
+        {q: "Bolera, f.", a: "bowlingová herna"},
+        {q: "boliche, m.", a: "bowlingová dráha"},
+        {q: "Velódromo, m.", a: "velodrom - závodní dráha pro dráhovou cyklistiku"},
+        {q: "Rocódromo, m.", a: "lezecká stěna"},
+        {q: "Balón, m.", a: "míč"},
+        {q: "Pelota, f.", a: "míček"},
+        {q: "Volante, m.", a: "badmintonový košíček"},
+        {q: "Canasta, f.", a: "basketbalový koš"},
+        {q: "cesto, m.", a: "basketbalový koš"},
+        {q: "Aro, m.", a: "obruč"},
+        {q: "Red, f.", a: "síť"},
+        {q: "Portería, f.", a: "branka"},
+        {q: "arco, m.", a: "branka"},
+        {q: "Línea de meta, f.", a: "cílová čára"},
+        {q: "Línea de salida, f.", a: "startovní čára"},
+        {q: "Poste, m. de salto", a: "tyč"},
+        {q: "Poste, m. de la portería", a: "tyč"},
+        {q: "Larguero, m.", a: "břevno"},
+        {q: "Valla, f.", a: "překážka"},
+        {q: "Disco, m.", a: "disk"},
+        {q: "pastilla, f.", a: "hokejový puk"},
+        {q: "Palo, m. de golf", a: "golfová hůl"},
+        {q: "Palo, m. de hockey", a: "hokejka"},
+        {q: "Bate, m.", a: "pálka"},
+        {q: "Raqueta, f.", a: "raketa"},
+        {q: "Paleta, f.", a: "pálka, plochá raketa"},
+        {q: "Pala, f. de kayak", a: "pádlo na kayak"},
+        {q: "Cesta, f.", a: "koš"},
+        {q: "Mesa, f. de ping-pong", a: "pingpongový stůl"},
+        {q: "Flotador, m.", a: "nafukovací kruh"},
+        {q: "Tabla, f.", a: "prkno"},
+        {q: "Tubo respirador, m.", a: "šnorchl"},
+        {q: "Máscara, f. de buceo", a: "potápěčská maska"},
+        {q: "Máscara, f. de esgrima", a: "maska na šermování"},
+        {q: "Aletas, f.pl.", a: "ploutve"},
+        {q: "Botella de oxígeno, f.", a: "kyslíková láhev"},
+        {q: "Velero, m.", a: "plachetnice"},
+        {q: "Vela, f.", a: "plachta"},
+        {q: "Piragua, f.", a: "kánoe"},
+        {q: "canoa, f.", a: "kánoe"},
+        {q: "Remo, m.", a: "veslo"},
+        {q: "Balsa, f.", a: "vor, raft"},
+        {q: "Embarcación, f.", a: "plavidlo, loď"},
+        {q: "Cometa, f.", a: "drak"},
+        {q: "Arnés, m.", a: "postroj, jištění"},
+        {q: "Saco, m., costal, m.", a: "pytel"},
+        {q: "Espada, f.", a: "meč"},
+        {q: "sable, m.", a: "šavle"},
+        {q: "Valla, f.", a: "překážka"},
+        {q: "Pértiga, f.", a: "tyč"},
+        {q: "Martillo, m.", a: "kladivo (pro hod kladivem)"},
+        {q: "Disco, m.", a: "disk"},
+        {q: "Jabalina, m.", a: "oštěp"},
+        {q: "Potro, m.", a: "gymnastický kůň"},
+        {q: "Barra de equilibrio, f.", a: "kladina"},
+        {q: "Cama elástica, f.", a: "trampolína"},
+        {q: "Anillas, f. pl.", a: "kruhy"},
+        {q: "Caballo con arcos, m.", a: "kůň našíř s madly"},
+        {q: "Colchoneta, f.", a: "žíněnka"},
+        {q: "cinta, f.", a: "stuha"},
+        {q: "Aro, m.", a: "obruč"},
+        {q: "Cuerda, f.", a: "švihadlo, gymnastické lano"},
+        {q: "Mazas, f. pl.", a: "kužele"},
+        {q: "Pesas, f. pl.", a: "závaží, činky"},
+        {q: "Bolo, m.", a: "kuželka v bowlingu"},
+        {q: "Bola, f.", a: "bowlingová koule"},
+        {q: "Bocha, f.", a: "koule na pétanque"},
+        {q: "Arco de competición, m.", a: "sportovní luk"},
+        {q: "Flecha, f.", a: "šíp"},
+        {q: "Silla de montar, f.", a: "jezdecké sedlo"},
+        {q: "Bicicleta, f. estática", a: "rotoped"},
+        {q: "Bicicleta, f. de montaña", a: "horské kolo"},
+        {q: "Bicicleta, f. de carretera", a: "silniční kolo"},
+        {q: "Sillín, m.", a: "sedlo na kole"},
+        {q: "Pedal, m.", a: "pedál"},
+        {q: "Manillar, m.", a: "řídítka"},
+        {q: "Cadena, f.", a: "řetěz"},
+        {q: "Piñón, m.", a: "ozubené kolečko"},
+        {q: "Esquís, m. pl.", a: "lyže"},
+        {q: "Bastón, m.", a: "lyžařská hůl"},
+        {q: "Rifle, m.", a: "puška"},
+        {q: "Diana, f.", a: "terč"},
+        {q: "Patines, m. pl. de hielo", a: "lední brusle"},
+        {q: "Patines, m. pl. de velocidad", a: "rychlobruslařské brusle"},
+        {q: "Patines, m. pl. en línea.", a: "kolečkové brusle"},
+        {q: "Piedra de curling, f.", a: "curlingový kámen"},
+        {q: "Escoba de curling, f.", a: "curlingové koště"},
+        {q: "Espinillera, f.", a: "holenní chránič"},
+        {q: "Rodillera, f.", a: "chránič kolen"},
+        {q: "Muñequera, f.", a: "chránič zápěstí"},
+        {q: "Hombrera, f.", a: "ramenní chránič"},
+        {q: "Codera, f.", a: "chránič loktu"},
+        {q: "Protector, m. bucal", a: "chránič zubů"},
+        {q: "Protector, m. facial", a: "obličejový chránič"},
+        {q: "Protector, m. pectoral", a: "hrudní chránič"},
+        {q: "Casco, m.", a: "helma"},
+        {q: "Bota, f., botín, m.", a: "bota"},
+        {q: "Tacos, m. pl. de fútbol", a: "kopačky"},
+        {q: "Tacos, m. pl. de atletismo", a: "atletické tretry"},
+        {q: "Media, f.", a: "ponožka, podkolenka"},
+        {q: "Pinzas nasales, m. pl.", a: "nosní svorka (při plavání)"},
+        {q: "Traje de neopreno, m.", a: "neoprenový oblek"},
+        {q: "Gorro, m.", a: "plavecká čepice"},
+        {q: "Chaleco salvavidas, m.", a: "záchranná vesta"},
+        {q: "Quimono, m.", a: "kimono"},
+        {q: "Cinturón, m.", a: "pás"},
+        {q: "Guante, m., de boxeo", a: "boxerské rukavice"},
+        {q: "Maillot, m.", a: "sportovní dres"},
+        {q: "Culote, m.", a: "cyklistické kraťasy s vložkou"},
+        {q: "Equipación, f.", a: "sportovní výzbroj"},
+        {q: "Pies de gato, m.", a: "lezečky - speciální obuv na lezení"},
+        {q: "Entrenador-a, m. f.", a: "trenér/ka"},
+        {q: "Preparador-a físico, m. f.", a: "kondiční trenér/ka"},
+        {q: "Rival, m. f.", a: "soupeř"},
+        {q: "Futbolista, m. f.", a: "fotbalista"},
+        {q: "jugador-a de fútbol, m. f.", a: "hráč fotbalu"},
+        {q: "Voleibolista, m. f.", a: "volejbalista"},
+        {q: "jugador-a de voleibol, m. f.", a: "hráč volejbalu"},
+        {q: "Basquetbolista, m. f.", a: "basketbalista"},
+        {q: "baloncestista, m. f.", a: "košíkář (hráč košíkové/basketbalu)"},
+        {q: "jugador-a de baloncesto, m. f.", a: "hráč basketbalu"},
+        {q: "Balonmanista, m. f.", a: "házenkář"},
+        {q: "jugador-a de balonmano, m. f.", a: "hráč házené"},
+        {q: "Waterpolista, m. f.", a: "hráč vodního póla"},
+        {q: "jugador-a de waterpolo, m. f.", a: "hráč vodního póla"},
+        {q: "Rugbista, m. f.", a: "rugbista"},
+        {q: "jugador-a de rugby, m. f.", a: "hráč rugby"},
+        {q: "Tenista, m. f.", a: "tenista"},
+        {q: "Pimponista, m. f., tenismesista, m. f.", a: "hráč stolního tenisu"},
+        {q: "Pelotari, m. f.", a: "hráč baskické hry pelota"},
+        {q: "Nadador-a, m. f.", a: "plavec"},
+        {q: "Buceador-a, m. f., buzo, m. f.", a: "potápěč"},
+        {q: "Surfista, m. f.", a: "Surfař"},
+        {q: "Saltador-a, m. f.", a: "skokan"},
+        {q: "clavadista, m. f.", a: "skokan do vody"},
+        {q: "Regatista, m. f.", a: "závodní jachtař"},
+        {q: "velerista, m. f.", a: "jachtař"},
+        {q: "Piragüista, m. f.", a: "kanoistika"},
+        {q: "Remero-a, m. f./remador-a, m. f.", a: "veslař/ka"},
+        {q: "palista, m. f.", a: "kanoista"},
+        {q: "Boxeador-a, m. f.", a: "boxer"},
+        {q: "luchador-a, m. f.", a: "zápasník"},
+        {q: "Yudoca, m. f.", a: "judista"},
+        {q: "Karateca, m. f.", a: "karatista"},
+        {q: "Tirador-a, m. f., esgrimador-a, m. f.", a: "střelec"},
+        {q: "esgrimista, m. f.", a: "šermíř/ka"},
+        {q: "Atleta, m. f.", a: "Atlet/ka"},
+        {q: "corredor-a, m. f.", a: "běžec/běžkyně"},
+        {q: "saltador-a, m. f.", a: "skokan/ka"},
+        {q: "lanzador-a, m. f.", a: "vrhač/ka"},
+        {q: "fondista, m. f.", a: "běžec na dlouhé tratě"},
+        {q: "maratoniano-a, m. f.", a: "maratonec"},
+        {q: "Gimnasta, m. f.", a: "gymnasta"},
+        {q: "Maestro-a de esgrima, m. f.", a: "učitel šermu"},
+        {q: "Levantador-a, m. f./halterófilo-a, m. f./haltera, m. f./pesista, m. f./", a: "vzpěrač"},
+        {q: "Golfista, m. f.", a: "golfista"},
+        {q: "Tirador-a, m. f., arquero-a, m. f.", a: "lukostřelec"},
+        {q: "Jinete, m. f., amazona, f.", a: "jezdec, jezdkyně"},
+        {q: "Ciclista, m. f., pedalista, m. f.", a: "cyklista"},
+        {q: "Escalador-a, m. f.", a: "horolezec"},
+        {q: "Esquiador-a, m. f.", a: "lyžař"},
+        {q: "Snowboarder, m. f., surfista sobre nieve, m. f., tablista de nieve, m. f.", a: "snowboardista"},
+        {q: "Patinador-a, m. f.", a: "bruslař"},
+        {q: "Pichichi, m. f., goleador-a, m. f.", a: "nejlepší střelec gólů"},
+        {q: "Portero-a,m. f., guardameta, m. f., cancerbero-a, m. f., arquero-a, m. f., guardapalos, m. f., guardavalla,m. f.", a: "brankář/ka"},
+        {q: "Defensa, m. f. central", a: "střední obránce"},
+        {q: "Defensa, m. f. lateral", a: "krajní obránce"},
+        {q: "zaguero, m. f.", a: "zadní obránce"},
+        {q: "Mediocampista, m. f., centrocampista, m. f.", a: "záložník"},
+        {q: "Delantero-a, m. f./atacante, m. f.", a: "útočník"},
+        {q: "Extremo, m. f. derecho", a: "pravé křídlo"},
+        {q: "Extremo, m. f. izquierdo", a: "levé křídlo"},
+        {q: "Base, m. f.", a: "rozehrávač"},
+        {q: "Escolta, m. f.", a: "střelec"},
+        {q: "Alero, m. f.", a: "křídlo"},
+        {q: "Ala, m. f.", a: "křídlo"},
+        {q: "Pívot, m. f.", a: "podkošový hráč"},
+        {q: "Árbitro-a, m. f., colegiado-da, m. f., referí, m. f.", a: "rozhodčí"},
+        {q: "Asistente, m. f.", a: "asistent rozhodčího"},
+        {q: "Linier, m. f., juez-a de línea, m. f.", a: "pomezní rozhodčí"},
+        {q: "Juez-a de silla, m. f.", a: "čárový rozhodčí"},
+        {q: "VAR, m.", a: "videorozhodčí"},
+        {q: "Recogepelotas, m. f.", a: "sběrač míčů"},
+        {q: "Punto de partido, m.", a: "mečbol/match ball"},
+        {q: "Hacer/cometer una falta técnica, personal", a: "dopustit se technické chyby, faulu"},
+        {q: "Tiempo muerto, m.", a: "oddechový čas"},
+        {q: "Prórroga, f.", a: "prodloužení"},
+        {q: "Penalti, m., penal, m.", a: "penalta/pokutový kop"},
+        {q: "Tanda, f. de penaltis/penales", a: "penaltový rozstřel"},
+        {q: "ronda, f. de penaltis/penales", a: "série penalt"},
+        {q: "Fuera de juego, m.", a: "offside/ofsajd"},
+        {q: "Tiempo de descuento, m.", a: "nastavený čas"},
+        {q: "Tarjeta, f. amarilla", a: "žlutá karta"},
+        {q: "Tarjeta, f. roja", a: "červená karta"},
+        {q: "Silbato, m.", a: "píšťalka"},
+        {q: "Cronómetro, m.", a: "stopky"},
+        {q: "Falta, f.", a: "faul"},
+        {q: "Descalificar", a: "diskvalifikovat"},
+        {q: "Puntuación, f.", a: "bodové hodnocení"},
+        {q: "Marcador, m.", a: "skóre"},
+        {q: "Aficionado-a, m. f., hincha, m. f., forofo-a, m. f., fan, m. f.", a: "fanoušek, příznivce"},
+        {q: "Campeonato, m.", a: "mistrovství"},
+        {q: "Campeón-a, m. f.", a: "mistr/yně"},
+        {q: "Carrera, f.", a: "závod"},
+        {q: "Competición, f., competencia, f.", a: "soutěž"},
+        {q: "Etapa, f.", a: "etapa"},
+        {q: "Liga, f.", a: "liga"},
+        {q: "Medalla, f. de oro", a: "zlatá medaile"},
+        {q: "Medalla, f. de plata", a: "stříbrná medaile"},
+        {q: "Medalla, f. de bronce", a: "bronzová medaile"},
+        {q: "Triunfo, m.", a: "vítězství"},
+        {q: "Trofeo, m., copa, f.", a: "trofej/pohár"},
+        {q: "Partido, m., amistoso", a: "přátelské utkání"},
+        {q: "Primer, segundo… tiempo, m.", a: "první, druhý... poločas"},
+        {q: "Récord, m.", a: "rekord"},
+        {q: "Recorrido, m.", a: "trasa"},
+        {q: "Favorito, m.", a: "favorit"},
+        {q: "Colista, m. f.", a: "tým nebo hráč na posledním místě tabulky"},
+        {q: "Apuesta, f. apostar", a: "sázka, vsadit se"},
+        {q: "Grada de animación f., animar", a: "tribuna nejaktivnějších fanoušků (hovorově lze říct kotel)"},
+        {q: "animar", a: "fandit, povzbuzovat"},
+        {q: "Clasificarse", a: "kvalifikovat se"},
+        {q: "Entrenar", a: "trénovat"},
+        {q: "entrenamiento, m.", a: "trénink"},
+        {q: "Calentar", a: "rozcvičit se"},
+        {q: "calentamiento, m.", a: "rozcvička"},
+        {q: "Ganar/vencer x derrotar/perder", a: "vyhrát x prohrát"},
+        {q: "Empatar/igualar x desempatar, empate, m.", a: "remizovat, vyrovnat skóre x získat vedení, remíza"},
+        {q: "Liderar", a: "vést"},
+        {q: "Remontar", a: "dohnat ztrátu"},
+        {q: "Ascender x Descender", a: "postoupit x sestoupit"},
+        {q: "Debutar x retirarse", a: "poprvé nastoupit x ukončit kariéru"},
+        {q: "Lograr la clasificación/conseguir el boleto para un torneo", a: "zajistit si postup/získat vstupenku na turnaj"},
+        {q: "Driblar", a: "driblovat"},
+        {q: "regatear", a: "obcházet soupeře"},
+        {q: "fintar", a: "dělat kličky"},
+        {q: "Pasar en corto", a: "přihrát na krátko"},
+        {q: "Pasar en largo", a: "přihrát na dlouho"},
+        {q: "dar un pase", a: "přihrát"},
+        {q: "Tirar", a: "vystřelit, hodit"},
+        {q: "Bloquear/parar/detener el balón", a: "zablokovat, zastavit, chytit míč"},
+        {q: "Botar", a: "odrážet míč o zem"},
+        {q: "Encestar", a: "dát koš"},
+        {q: "Rebote, m.", a: "odraz"},
+        {q: "Anotar/marcar/meter un (auto) gol", a: "dát (vlastní) gól"},
+        {q: "en propia puerta", a: "do vlastní brány"},
+        {q: "Dar una asistencia, asistir", a: "přihrát na gól, asistovat"},
+        {q: "Hacer un penalti", a: "způsobit penaltu"},
+        {q: "Despejar", a: "odkopnout"},
+        {q: "Centrar", a: "centrovat"},
+        {q: "Cabecear", a: "hlavičkovat"},
+        {q: "Saque, m.", a: "rozehrání, podání"},
+        {q: "sacar de banda", a: "vhazovat aut"},
+        {q: "sacar de esquina", a: "rozehrát rohový kop"},
+        {q: "sacar de puerta", a: "rozehrát odkopem od brány"},
+        {q: "Cambio, m. de jugador", a: "střídání hráče"},
+        {q: "Jugada, f. ensayada", a: "nacvičená herní akce"},
+        {q: "Patear el balón", a: "kopnout do míče"},
+        {q: "Hacer un placaje, placar", a: "složit soupeře"},
+        {q: "Surfear/coger/montar/pillar una ola", a: "surfovat, chita, jet na vlně"},
+        {q: "Zambullirse", a: "Ponořit se"},
+        {q: "Remar", a: "veslovat"},
+        {q: "Luchar", a: "bojovat, zápasit"},
+        {q: "Esgrimir", a: "šermovat"},
+        {q: "empuñar", a: "chopit se"},
+        {q: "manejar el sable", a: "ovládat šavli"},
+        {q: "Galopar", a: "cválat"},
+        {q: "Trotar", a: "klusat"},
+        {q: "Marchar", a: "pochodovat"},
+        {q: "Esprintar", a: "sprintovat"},
+        {q: "Lanzar", a: "házet"},
+        {q: "Pedalear", a: "šlapat do pedálů"},
+        {q: "Levantar", a: "zvedat"},
+        {q: "Patinar", a: "bruslit"},
+        {q: "Esquiar", a: "lyžovat"},
+        {q: "Apuntar", a: "mířit"},
+        {q: "Disparar", a: "vystřelit"},
+        {q: "acertar, atinar, dar en el blanco x fallar/errar", a: "trefit se x minout"},
+        {q: "Estirar", a: "natahovat, protahovat"},
+        {q: "Hacer sentadillas", a: "dělat dřepy"},
+        {q: "flexiones", a: "kliky"},
+        {q: "abdominales", a: "sedy-lehy"},
+        {q: "el pino", a: "stojka"},
+        {q: "el puente", a: "most"},
+        {q: "la voltereta", a: "kotoul"},
+        {q: "la pirueta", a: "pirueta"},
+        {q: "Baraja f. española.", a: "španělské karty"},
+        {q: "Baraja f. francesa", a: "francouzské karty"},
+        {q: "Baraja f. de póquer", a: "pokerové karty"},
+        {q: "Carta, f./naipe", a: "karta"},
+        {q: "Sota, f. caballo, m. rey, m.", a: "kluk, jezdec, král"},
+        {q: "Palo, m.", a: "barva karty"},
+        {q: "Oros, copas, espadas, bastos", a: "mince, poháry, meče, hole"},
+        {q: "Corazones, picas, diamantes, tréboles", a: "herce (srdce), piky, káry, kříže"},
+        {q: "As, m.", a: "eso"},
+        {q: "Escalera póker de", a: "postupka"},
+        {q: "trío de", a: "trojice"},
+        {q: "pareja de ases", a: "pár es"},
+        {q: "comodín, m.", a: "žolík"},
+        {q: "barajear, mezclar", a: "míchat karty"},
+        {q: "Dominó, m.", a: "domino"},
+        {q: "Doble blanca", a: "dvojitá nula"},
+        {q: "Ajedrez, m.", a: "šachy"},
+        {q: "Negras", a: "černé figurky"},
+        {q: "blancas", a: "bílé figurky"},
+        {q: "Peón, m.", a: "pěšec"},
+        {q: "torre, f.", a: "věž"},
+        {q: "rey, m.", a: "král"},
+        {q: "reina, f.", a: "královna"},
+        {q: "alfil, m.", a: "střelec"},
+        {q: "caballo, m.", a: "kůň"},
+        {q: "Parchís, m. la oca", a: "Člověče, nezlob se"},
+        {q: "Tablero, m.", a: "herní deska"},
+        {q: "Mover la ficha, f.", a: "posunout figurkou"},
+        {q: "Lanzar/tirar los dados", a: "hodit kostkama"},
+        {q: "Cubilete, m.", a: "kalímek na kostky"},
+        {q: "Casilla, f., de salida", a: "startovní políčko"},
+        {q: "Partida, f.", a: "hra"},
+        {q: "Es tu turno, m., te toca", a: "jsi na řadě, jsi na tahu"},
+        {q: "Billar, m.", a: "kulečník"},
+        {q: "Mesa de billar", a: "stůl na kulečník"},
+        {q: "taco", a: "tágo"},
+        {q: "tiza", a: "křída"},
+        {q: "bola", a: "koule"},
+        {q: "Dardos", a: "šipky"},
+        {q: "Bingo", a: "bingo"},
+        {q: "lotería mexicana", a: "mexická loterie"},
+        {q: "Quiniela, primitiva, lotería", a: "sázková hra"},
+        {q: "Máquina tragaperras", a: "výherní automaty"},
+        {q: "Ruleta", a: "ruleta"},
+        {q: "** Cara o cruz", a: "elegir algo"},
+        {q: "**Echar balones fuera", a: "evitar una pregunta o no aceptar la responsabilidad"},
+        {q: "**Casarse de penalti", a: "casarse por un embarazo inesperado"},
+        {q: "**Colgar las botas", a: "dejar de practicar deporte"},
+        {q: "**La pelota está en tu tejado", a: "ahora tú tienes que decidir o actuar"},
+        {q: "**No dar pie con bola", a: "equivocarse mucho o no hacer nada bien"},
+        {q: "**Estar/ quedarse/ dejar fuera de juego", a: "estar confundido o sorprendido"},
+        {q: "**Devolver la pelota", a: "responder a alguien con una pregunta o acción similar"},
+        {q: "**Remar contra viento y marea", a: "seguir adelante a pesar de muchas dificultades"},
+        {q: "**Conseguir algo de rebote", a: "conseguir algo por casualidad o indirectamente"},
+        {q: "**Sobre la bocina", a: "hacer algo justo en el último momento"},
+        {q: "**Tirar la toalla", a: "rendirse y dejar de intentarlo"},
+        {q: "**Pasar por el aro", a: "aceptar algo que no quieres porque tienes otra opción"},
+        {q: "**Tirarse a la piscina", a: "arriesgarse sin sabe que va a pasar"},
+        {q: "**Dar en el blanco", a: "decir algo muy correcto"},
+        {q: "**Estar en la cresta de la ola", a: "estar en el momento de mucho éxito y popularidad"},
+        {q: "**Ir sobre ruedas", a: "ir muy bien, sin problemas"},
+        {q: "**Estar contra las cuerdas", a: "algo muy básico"},
+        {q: "**Ser un fuera de serie", a: "ser una persona excepcional, muy buena en algo"},
+        {q: "**Sota, caballo y rey", a: "algo muy básico"},
+        {q: "**Estar jugando sus cartas", a: "usar su cartas para conseguir un ascenso"},
+        {q: "**Sacarse un as de la manga", a: "encontrar una solución inesperada o preparar una sorpresa"}
+    ];
+
+    let palabrasNoConozco = [];
+    let palabrasYaConozco = [];
+    let invertido = false;
+    let filaActiva = 'no'; 
+    let idx = 0;
+
+    const cardEl = document.getElementById('c');
+    const qTextEl = document.getElementById('q-text');
+    const aTextEl = document.getElementById('a-text');
+    const aImgEl = document.getElementById('a-img');
+    const sEl = document.getElementById('status');
+
+    function guardarProgreso() {
+        localStorage.setItem('palabrasNoConozco', JSON.stringify(palabrasNoConozco));
+        localStorage.setItem('palabrasYaConozco', JSON.stringify(palabrasYaConozco));
+    }
+
+    function cargarProgreso() {
+        const localNoConozco = localStorage.getItem('palabrasNoConozco');
+        const localYaConozco = localStorage.getItem('palabrasYaConozco');
+
+        if (localNoConozco !== null && localYaConozco !== null) {
+            palabrasNoConozco = JSON.parse(localNoConozco);
+            palabrasYaConozco = JSON.parse(localYaConozco);
+        } else {
+            palabrasNoConozco = [...todasLasPalabras];
+            palabrasYaConozco = [];
+        }
+    }
+
+    function reiniciarProgreso() {
+        if (confirm("¿Seguro que quieres borrar tu progreso y empezar de cero?")) {
+            localStorage.removeItem('palabrasNoConozco');
+            localStorage.removeItem('palabrasYaConozco');
+            palabrasNoConozco = [...todasLasPalabras];
+            palabrasYaConozco = [];
+            idx = 0;
+            filaActiva = 'no';
+            document.getElementById('btn-fila-no').classList.add('active');
+            document.getElementById('btn-fila-si').classList.remove('active');
+            update();
+        }
+    }
+
+    function getListaActiva() {
+        return filaActiva === 'no' ? palabrasNoConozco : palabrasYaConozco;
+    }
+
+    function renderImagen(tarjeta) {
+        if (tarjeta && tarjeta.img) {
+            aImgEl.src = tarjeta.img;
+            aImgEl.alt = tarjeta.q;
+            aImgEl.style.display = 'block';
+        } else {
+            aImgEl.removeAttribute('src');
+            aImgEl.style.display = 'none';
+        }
+    }
+
+    function update() {
+        const lista = getListaActiva();
+        cardEl.classList.remove('flipped');
+
+        document.getElementById('count-no').innerText = palabrasNoConozco.length;
+        document.getElementById('count-si').innerText = palabrasYaConozco.length;
+
+        if (lista.length === 0) {
+            qTextEl.innerText = "¡Lista vacía!";
+            aTextEl.innerText = filaActiva === 'no' ? "¡Enhorabuena, has repasado todo!" : "No has añadido ninguna palabra aquí aún.";
+            renderImagen(null);
+            sEl.innerText = "0 / 0";
+            return;
+        }
+
+        if (idx >= lista.length) idx = Math.max(0, lista.length - 1);
+
+        setTimeout(() => {
+            const actual = lista[idx];
+            if (!invertido) {
+                qTextEl.innerText = actual.q; 
+                aTextEl.innerText = actual.a; 
+            } else {
+                qTextEl.innerText = actual.a; 
+                aTextEl.innerText = actual.q; 
+            }
+            renderImagen(actual);
+            sEl.innerText = `${idx + 1} / ${lista.length}`;
+        }, 100);
+    }    
+
+    function flip() { 
+        const lista = getListaActiva();
+        if (lista.length > 0) cardEl.classList.toggle('flipped'); 
+    }
+    
+    function next() { 
+        const lista = getListaActiva();
+        if(idx < lista.length - 1) { idx++; update(); } 
+    }
+    
+    function prev() { 
+        if(idx > 0) { idx--; update(); } 
+    }
+
+    function shuffle() {
+        const lista = getListaActiva();
+        if (lista.length > 0) {
+            lista.sort(() => Math.random() - 0.5);
+            idx = 0;
+            guardarProgreso();
+            update();
+        }
+    } 
+
+    function invertirIdiomas() {
+        invertido = !invertido;
+        document.getElementById('modo-texto').innerText = invertido ? "Checo ➡ Español" : "Español ➡ Checo";
+        update();
+    }
+ 
+    function setFila(tipo) {
+        filaActiva = tipo;
+        idx = 0;
+        
+        if (tipo === 'no') {
+            document.getElementById('btn-fila-no').classList.add('active');
+            document.getElementById('btn-fila-si').classList.remove('active');
+        } else {
+            document.getElementById('btn-fila-no').classList.remove('active');
+            document.getElementById('btn-fila-si').classList.add('active');
+        }
+        
+        update();
+    }
+
+    function clasificarPalabra(loSabe) {
+        let listaOrigen = filaActiva === 'no' ? palabrasNoConozco : palabrasYaConozco;
+        let listaDestino = filaActiva === 'no' ? palabrasYaConozco : palabrasNoConozco;
+
+        if (listaOrigen.length === 0) return;
+
+        if ((filaActiva === 'no' && !loSabe) || (filaActiva === 'si' && loSabe)) {
+            next();
+            return;
+        }
+
+        const palabraMovida = listaOrigen.splice(idx, 1)[0];
+        listaDestino.push(palabraMovida);
+
+        guardarProgreso();
+        update();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if(e.code === 'ArrowRight') next();
+        if(e.code === 'ArrowLeft') prev();
+        if(e.code === 'Space') flip();
+    });
+
+    cargarProgreso();
+    update();
+</script>
+</body>
+</html>
